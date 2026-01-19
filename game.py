@@ -52,6 +52,7 @@ class Game(BasePage):
         self.t_count_hand2.set_text(f"рука 2 {self.player2_cards.__len__()} карт")
 
     def create_cards(self):
+        s.debug_log("create card")
         counter = 0
         card = self.deck.get_card()
         while card is not None:
@@ -67,13 +68,14 @@ class Game(BasePage):
             counter += 1
 
     def step(self, is_first_player: bool):
+        s.debug_log("step")
         player_cards = self.player1_cards if is_first_player else self.player2_cards
 
         if is_first_player:
-            if len(self.deck_cards1)+1 - len(self.deck_cards2) >=2 :
+            if len(self.deck_cards1) + 1 - len(self.deck_cards2) >= 2:
                 return
         else:
-            if len(self.deck_cards2)+1 - len(self.deck_cards1) >=2 :
+            if len(self.deck_cards2) + 1 - len(self.deck_cards1) >= 2:
                 return
 
         card = player_cards.pop(0)
@@ -88,40 +90,31 @@ class Game(BasePage):
             self._battle()
 
     def _battle(self):
+        s.debug_log("battle")
         card1 = self.deck_cards1[-1].card
         card2 = self.deck_cards2[-1].card
         if card1 == card2:
             return
-        player_cards = self.player1_cards if card1>card2 else self.player2_cards
-        final_pos = self.pos1_hand if card1>card2 else self.pos2_hand
+        s.Timer(1, self._move_to_winner)
+
+    def _move_to_winner(self):
+        card1 = self.deck_cards1[-1].card
+        card2 = self.deck_cards2[-1].card
+        player_cards = self.player1_cards if card1 > card2 else self.player2_cards
+        final_pos = self.pos1_hand if card1 > card2 else self.pos2_hand
         cards = self.deck_cards1 + self.deck_cards2
-        for i,e in enumerate(cards):
+        for i, e in enumerate(cards):
             card = e
             player_cards.append(card)
-            self._move_card(card,final_pos,1.5+0.4*i)
+            s.debug_log_warning(
+                f"for power{card.card.rank},current_pos {card.position}, pos{final_pos}"
+            )
+            card.move(final_pos, 0.4 * i, False)
         self.deck_cards1.clear()
         self.deck_cards2.clear()
 
     def _animation(self, is_first_player, card):
+        s.debug_log("animation")
         card.set_visible(True)
         final_pos = self.pos1_deck if is_first_player else self.pos2_deck
-        self._move_card(card, final_pos)
-
-    def _move_card(self, card:CardView, final_pos,delay:float=0):
-        tween_x = s.Tween(
-            card.position[0],
-            final_pos[0],
-            0.7,
-            s.EasingType.EASE_OUT,
-            on_update=lambda x: card.set_position((x, card.position[1])),
-            delay=delay
-        )
-        tween_y = s.Tween(
-            card.position[1],
-            final_pos[1],
-            0.7,
-            s.EasingType.EASE_OUT,
-            on_update=lambda y: card.set_position((card.position[0], y)),
-            delay=delay
-        )
-
+        card.move(final_pos)
