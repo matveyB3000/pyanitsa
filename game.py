@@ -5,10 +5,12 @@ from card_view import CardView
 from card import Card
 from deck import Deck
 from typing import List
-
+from page_type import PageType
+from card_type import CardRank
 
 class Game(s.Scene):
     def __init__(self):
+        self.is_anim = False
         self.pos1_deck = (200, s.WH_C.y)
         self.pos2_deck = (s.WH.x - 200, s.WH_C.y)
         self.pos1_hand = (s.WH_C.x, 200)
@@ -46,7 +48,7 @@ class Game(s.Scene):
         )
         self.player1_button.alpha = 0
         self.player2_button.alpha = 0
-        self.deck = Deck()
+        self.deck = Deck(CardRank.QUEEN)
         self.card_list = []
         self.player1_cards: List[CardView] = []
         self.player2_cards: List[CardView] = []
@@ -55,7 +57,7 @@ class Game(s.Scene):
 
         self.create_cards()
 
-    def update(self):
+    def update(self, dt):
         self.t_count_hand1.set_text(f"рука 1 {self.player1_cards.__len__()} карт")
         self.t_count_hand2.set_text(f"рука 2 {self.player2_cards.__len__()} карт")
 
@@ -66,7 +68,7 @@ class Game(s.Scene):
         while card is not None:
             which_player = counter % 2 == 0
             pos = self.pos1_hand if which_player else self.pos2_hand
-            card_view = CardView(card, pos,scene = self)
+            card_view = CardView(card, pos, scene=self)
             if which_player:
                 self.player1_cards.append(card_view)
             else:
@@ -75,8 +77,14 @@ class Game(s.Scene):
             counter += 1
 
     def step(self, is_first_player: bool):
+        if (
+            self.is_anim
+            or self.player1_cards.__len__() == 0
+            or self.player2_cards.__len__() == 0
+        ):
+            return
         s.debug_log("step")
-        s.audio_manager.play_sound("sounds\mb_card_deal_08.mp3")
+
         player_cards = self.player1_cards if is_first_player else self.player2_cards
 
         if is_first_player:
@@ -85,7 +93,7 @@ class Game(s.Scene):
         else:
             if len(self.deck_cards2) + 1 - len(self.deck_cards1) >= 2:
                 return
-
+        s.audio_manager.play_sound("sounds\mb_card_deal_08.mp3")
         card = player_cards.pop(0)
         self._animation(is_first_player, card)
 
@@ -104,6 +112,7 @@ class Game(s.Scene):
         if card1 == card2:
             return
         s.Timer(1, self._move_to_winner)
+        self.is_anim = True
 
     def _move_to_winner(self):
         card1 = self.deck_cards1[-1].card
@@ -118,8 +127,11 @@ class Game(s.Scene):
                 f"for power{card.card.rank},current_pos {card.position}, pos{final_pos}"
             )
             card.move(final_pos, 0.4 * i, False)
+            if i == cards.__len__() - 1:
+                s.Timer(0.4 * i + 0.7, self._off_anim)
         self.deck_cards1.clear()
         self.deck_cards2.clear()
+        self.is_game_over()
 
     def _animation(self, is_first_player, card):
         s.debug_log("animation")
@@ -132,6 +144,7 @@ class Game(s.Scene):
             self.game_over()
 
     def game_over(self):
-        s.Timer(1)
-        self.t_count_hand1.kill()
-        self.t_count_hand2.kill()
+        s.Timer(2, lambda: s.scene.set_scene_by_name(PageType.GAME_OVER))
+
+    def _off_anim(self):
+        self.is_anim = False

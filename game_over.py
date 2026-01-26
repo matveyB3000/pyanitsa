@@ -1,9 +1,10 @@
 import pygame as p
 import spritePro as s
-from base_page import BasePage
-from message_bus import page_change
 from page_type import PageType
 
+def change_scene_menu():
+    s.debug_log("MENU",[255,255,255])
+    s.scene.set_scene_by_name(PageType.MENU)
 
 class Game_over(s.Scene):
     def __init__(self):
@@ -16,4 +17,5 @@ class Game_over(s.Scene):
             scene=self,
         )
         self.menu_button = s.Button("", (200, 100), s.WH_C, "В МЕНЮ", scene=self)
+        self.menu_button.on_click(change_scene_menu)
         self.menu_button.set_rect_shape((200, 100), border_radius=12)

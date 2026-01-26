@@ -3,11 +3,11 @@ from card import Card
 from constant_sprites import RUBASHKA , get_sprite
 
 class CardView(s.Sprite):
-    def __init__(self,card:Card,pos = (0,0)):
+    def __init__(self,card:Card,pos = (0,0),scene:s.Scene = None):
         self.card = card
         self.image_rubashka = RUBASHKA
         self.image_card = get_sprite(card.rank,card.type)
-        super().__init__(RUBASHKA,(102,154),pos)
+        super().__init__(RUBASHKA,(102,154),pos,scene=scene)
         card._visibility.subscribe(self.set_visible)
         self.set_visible(False)
     

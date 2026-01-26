@@ -11,6 +11,6 @@ def create_scenes():
     s.scene.add_scene(PageType.GAME_OVER,Game_over)
     s.scene.set_scene_by_name(PageType.MENU)
 
-s
+
 
 
