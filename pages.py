@@ -7,14 +7,15 @@ from typing import Dict
 from base_page import BasePage
 from message_bus import page_change
 from page_type import PageType
-
+from game_over import Game_over
 
 class PageSwitcher:
     def __init__(self):
         page_change.connect(self.on_change)
         self.pages: Dict[PageType, BasePage] = {
             PageType.MENU: Menu(),
-            PageType.GAME: Game()
+            PageType.GAME: Game(),
+            PageType.GAME_OVER : Game_over()
         }
         self.switch(PageType.MENU)
 

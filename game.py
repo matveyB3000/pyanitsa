@@ -7,7 +7,7 @@ from deck import Deck
 from typing import List
 
 
-class Game(BasePage):
+class Game(s.Scene):
     def __init__(self):
         self.pos1_deck = (200, s.WH_C.y)
         self.pos2_deck = (s.WH.x - 200, s.WH_C.y)
@@ -19,25 +19,33 @@ class Game(BasePage):
 
         super().__init__()
         self.t_count_hand1 = s.TextSprite(
-            "рука 1 ", 64, pos=(20, 20), anchor=s.Anchor.TOP_LEFT
+            "рука 1 ", 64, pos=(20, 20), anchor=s.Anchor.TOP_LEFT, scene=self
         )
         self.t_count_hand2 = s.TextSprite(
-            "2 ruka", 64, pos=s.WH + p.Vector2(-20, -20), anchor=s.Anchor.BOTTOM_RIGHT
+            "2 ruka",
+            64,
+            pos=s.WH + p.Vector2(-20, -20),
+            anchor=s.Anchor.BOTTOM_RIGHT,
+            scene=self,
         )
         self.player1_button = s.Button(
-            "", (202, 300), self.pos1_hand, "", on_click=lambda: self.step(True)
+            "",
+            (202, 300),
+            self.pos1_hand,
+            "",
+            on_click=lambda: self.step(True),
+            scene=self,
         )
         self.player2_button = s.Button(
-            "", (202, 300), self.pos2_hand, "", on_click=lambda: self.step(False)
+            "",
+            (202, 300),
+            self.pos2_hand,
+            "",
+            on_click=lambda: self.step(False),
+            scene=self,
         )
         self.player1_button.alpha = 0
         self.player2_button.alpha = 0
-        self.sprites_group.add(
-            self.t_count_hand1,
-            self.t_count_hand2,
-            self.player1_button,
-            self.player2_button,
-        )
         self.deck = Deck()
         self.card_list = []
         self.player1_cards: List[CardView] = []
@@ -58,8 +66,7 @@ class Game(BasePage):
         while card is not None:
             which_player = counter % 2 == 0
             pos = self.pos1_hand if which_player else self.pos2_hand
-            card_view = CardView(card, pos)
-            self.sprites_group.add(card_view)
+            card_view = CardView(card, pos,scene = self)
             if which_player:
                 self.player1_cards.append(card_view)
             else:
@@ -69,6 +76,7 @@ class Game(BasePage):
 
     def step(self, is_first_player: bool):
         s.debug_log("step")
+        s.audio_manager.play_sound("sounds\mb_card_deal_08.mp3")
         player_cards = self.player1_cards if is_first_player else self.player2_cards
 
         if is_first_player:
@@ -118,3 +126,12 @@ class Game(BasePage):
         card.set_visible(True)
         final_pos = self.pos1_deck if is_first_player else self.pos2_deck
         card.move(final_pos)
+
+    def is_game_over(self):
+        if self.player1_cards.__len__() == 0 or self.player2_cards.__len__() == 0:
+            self.game_over()
+
+    def game_over(self):
+        s.Timer(1)
+        self.t_count_hand1.kill()
+        self.t_count_hand2.kill()
