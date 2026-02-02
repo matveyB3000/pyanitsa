@@ -1,7 +1,4 @@
 import spritePro as s
-import constant_sprites
-from game import Game
-from pages import PageSwitcher
 import scene_manger 
 
 s.get_screen((1000, 1000), "пьяница", "icon.jpg")

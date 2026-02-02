@@ -7,6 +7,15 @@ from deck import Deck
 from typing import List
 from page_type import PageType
 from card_type import CardRank
+from config import MIN_CARD
+from message_bus import step
+
+def test(**kwargs):
+    s.debug_log("нажал",kwargs)
+
+def change_scene_game_over():
+    s.debug_log("GAME OVER",[255,255,255])
+    s.scene.set_scene_by_name(PageType.GAME_OVER)
 
 class Game(s.Scene):
     def __init__(self):
@@ -15,6 +24,8 @@ class Game(s.Scene):
         self.pos2_deck = (s.WH.x - 200, s.WH_C.y)
         self.pos1_hand = (s.WH_C.x, 200)
         self.pos2_hand = (s.WH_C.x, s.WH.y - 200)
+        step.connect(self.step)
+        step.connect(test)
 
         self.deck_cards1 = []
         self.deck_cards2 = []
@@ -35,7 +46,7 @@ class Game(s.Scene):
             (202, 300),
             self.pos1_hand,
             "",
-            on_click=lambda: self.step(True),
+            on_click=lambda: step.send(is_first_player = True),
             scene=self,
         )
         self.player2_button = s.Button(
@@ -43,12 +54,12 @@ class Game(s.Scene):
             (202, 300),
             self.pos2_hand,
             "",
-            on_click=lambda: self.step(False),
+            on_click=lambda: step.send(is_first_player=False),
             scene=self,
         )
         self.player1_button.alpha = 0
         self.player2_button.alpha = 0
-        self.deck = Deck(CardRank.QUEEN)
+        self.deck = Deck(MIN_CARD)
         self.card_list = []
         self.player1_cards: List[CardView] = []
         self.player2_cards: List[CardView] = []
@@ -144,7 +155,7 @@ class Game(s.Scene):
             self.game_over()
 
     def game_over(self):
-        s.Timer(2, lambda: s.scene.set_scene_by_name(PageType.GAME_OVER))
+        s.Timer(2, change_scene_game_over)
 
     def _off_anim(self):
         self.is_anim = False
