@@ -7,15 +7,18 @@ from deck import Deck
 from typing import List
 from page_type import PageType
 from card_type import CardRank
-from config import MIN_CARD
+import config
 from message_bus import step
 
+
 def test(**kwargs):
-    s.debug_log("нажал",kwargs)
+    s.debug_log("нажал", kwargs)
+
 
 def change_scene_game_over():
-    s.debug_log("GAME OVER",[255,255,255])
+    s.debug_log("GAME OVER", [255, 255, 255])
     s.scene.set_scene_by_name(PageType.GAME_OVER)
+
 
 class Game(s.Scene):
     def __init__(self):
@@ -46,7 +49,7 @@ class Game(s.Scene):
             (202, 300),
             self.pos1_hand,
             "",
-            on_click=lambda: step.send(is_first_player = True),
+            on_click=lambda: step.send(is_first_player=True),
             scene=self,
         )
         self.player2_button = s.Button(
@@ -59,7 +62,9 @@ class Game(s.Scene):
         )
         self.player1_button.alpha = 0
         self.player2_button.alpha = 0
-        self.deck = Deck(MIN_CARD)
+
+    def on_enter(self):
+        self.deck = Deck(config.min_card)
         self.card_list = []
         self.player1_cards: List[CardView] = []
         self.player2_cards: List[CardView] = []
@@ -90,8 +95,8 @@ class Game(s.Scene):
     def step(self, is_first_player: bool):
         if (
             self.is_anim
-            or self.player1_cards.__len__() == 0
-            or self.player2_cards.__len__() == 0
+            or (self.player1_cards.__len__() == 0 and is_first_player)
+            or (self.player2_cards.__len__() == 0 and not is_first_player)
         ):
             return
         s.debug_log("step")
@@ -110,8 +115,10 @@ class Game(s.Scene):
 
         if is_first_player:
             self.deck_cards1.append(card)
+            card.sorting_order = self.deck_cards1.__len__()
         else:
             self.deck_cards2.append(card)
+            card.sorting_order = self.deck_cards2.__len__()
 
         if len(self.deck_cards1) == len(self.deck_cards2):
             self._battle()
@@ -120,24 +127,29 @@ class Game(s.Scene):
         s.debug_log("battle")
         card1 = self.deck_cards1[-1].card
         card2 = self.deck_cards2[-1].card
-        if card1 == card2:
+        if card1 == card2  and self.player1_cards.__len__()!=0 and self.player2_cards.__len__()!=0:
             return
         s.Timer(1, self._move_to_winner)
         self.is_anim = True
 
     def _move_to_winner(self):
-        card1 = self.deck_cards1[-1].card
-        card2 = self.deck_cards2[-1].card
-        player_cards = self.player1_cards if card1 > card2 else self.player2_cards
-        final_pos = self.pos1_hand if card1 > card2 else self.pos2_hand
+        
+        card1:Card = self.deck_cards1[-1].card
+        card2:Card = self.deck_cards2[-1].card
+
+        s.debug_log_custom("[BATTLE]",f"{card1.rank.name} {card2.rank.name}",(255,200,200))
+        is_first_win = card1>card2
+        player_cards = self.player1_cards if is_first_win else self.player2_cards
+        s.debug_log(f"выиграл{is_first_win}")
+        final_pos = self.pos1_hand if is_first_win else self.pos2_hand
+        s.debug_log_custom("[BATTLE]",f"карты ушли в {final_pos}",[0,255,0])
         cards = self.deck_cards1 + self.deck_cards2
-        for i, e in enumerate(cards):
-            card = e
-            player_cards.append(card)
+        for i, cardView in enumerate(cards):
+            player_cards.append(cardView)
             s.debug_log_warning(
-                f"for power{card.card.rank},current_pos {card.position}, pos{final_pos}"
+                f"for power{cardView.card.rank},current_pos {cardView.position}, pos{final_pos}"
             )
-            card.move(final_pos, 0.4 * i, False)
+            cardView.move(final_pos, 0.4 * i, False)
             if i == cards.__len__() - 1:
                 s.Timer(0.4 * i + 0.7, self._off_anim)
         self.deck_cards1.clear()

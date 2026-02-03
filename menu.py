@@ -1,8 +1,9 @@
 import pygame as p
 import spritePro as s
 from page_type import PageType
+from card_type import CardRank
 from message_bus import min_card_change
-from config import MIN_CARD
+import config
 
 
 def change_scene_game():
@@ -40,7 +41,7 @@ class Menu(s.Scene):
                 (s.WH_C.x, s.WH_C.y + 200),
                 "выше",
                 scene=self,
-                on_click=lambda: min_card_change.send(is_up=True),
+                on_click=lambda: self._event_sender(True),
             ),
             s.Button(
                 "",
@@ -48,7 +49,7 @@ class Menu(s.Scene):
                 (s.WH_C.x, s.WH_C.y + 300),
                 "ниже",
                 scene=self,
-                on_click=lambda: min_card_change.send(is_up=False),
+                on_click=lambda: self._event_sender(False),
             ),
         ]
         self.min_card_text = s.TextSprite(
@@ -58,13 +59,21 @@ class Menu(s.Scene):
         self.play_button.on_click(change_scene_game)
 
     def update(self, dt):
-        self.min_card_text.text = f"{MIN_CARD.name}"
+        self.min_card_text.text = config.min_card.name
 
-    def min_card_change(self, **kwargs):
-        is_up = kwargs.get("is_up")
-        s.debug_log(f"было {MIN_CARD.name}")
-        MIN_CARD += 1 if is_up else -1
-        s.debug_log(f"стало {MIN_CARD.name}")
+    def min_card_change(self, is_up):
+        s.debug_log("min card chnfe")
+        s.debug_log(f"было {config.min_card.name}")
+        num_card = config.min_card.value
+        num_card += 1 if is_up  else -1
+        if num_card < CardRank.TWO.value or num_card> CardRank.ACE.value:
+            return
+        config.min_card = CardRank(num_card)
+        s.debug_log(f"стало {config.min_card.name}")
+        
+    def _event_sender(self,is_up:bool):
+        min_card_change.send(is_up = is_up)
+        s.debug_log("событие отправлено")
 
     # def min_card_change(self, is_up: bool):
     #     s.debug_log(f"было {MIN_CARD.name}")
